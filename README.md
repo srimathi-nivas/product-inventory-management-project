@@ -1,201 +1,129 @@
-# bcrypt.js
+# brace-expansion
 
-Optimized bcrypt in JavaScript with zero dependencies, with TypeScript support. Compatible to the C++
-[bcrypt](https://npmjs.org/package/bcrypt) binding on Node.js and also working in the browser.
+[Brace expansion](https://www.gnu.org/software/bash/manual/html_node/Brace-Expansion.html), 
+as known from sh/bash, in JavaScript.
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/dcodeIO/bcrypt.js/test.yml?branch=main&label=test&logo=github)](https://github.com/dcodeIO/bcrypt.js/actions/workflows/test.yml) [![Publish Status](https://img.shields.io/github/actions/workflow/status/dcodeIO/bcrypt.js/publish.yml?branch=main&label=publish&logo=github)](https://github.com/dcodeIO/bcrypt.js/actions/workflows/publish.yml) [![npm](https://img.shields.io/npm/v/bcryptjs.svg?label=npm&color=007acc&logo=npm)](https://www.npmjs.com/package/bcryptjs)
+[![build status](https://secure.travis-ci.org/juliangruber/brace-expansion.svg)](http://travis-ci.org/juliangruber/brace-expansion)
+[![downloads](https://img.shields.io/npm/dm/brace-expansion.svg)](https://www.npmjs.org/package/brace-expansion)
+[![Greenkeeper badge](https://badges.greenkeeper.io/juliangruber/brace-expansion.svg)](https://greenkeeper.io/)
 
-## Security considerations
+[![testling badge](https://ci.testling.com/juliangruber/brace-expansion.png)](https://ci.testling.com/juliangruber/brace-expansion)
 
-Besides incorporating a salt to protect against rainbow table attacks, bcrypt is an adaptive function: over time, the
-iteration count can be increased to make it slower, so it remains resistant to brute-force search attacks even with
-increasing computation power. ([see](http://en.wikipedia.org/wiki/Bcrypt))
+## Example
 
-While bcrypt.js is compatible to the C++ bcrypt binding, it is written in pure JavaScript and thus slower ([about 30%](https://github.com/dcodeIO/bcrypt.js/wiki/Benchmark)), effectively reducing the number of iterations that can be
-processed in an equal time span.
+```js
+var expand = require('brace-expansion');
 
-The maximum input length is 72 bytes (note that UTF-8 encoded characters use up to 4 bytes) and the length of generated
-hashes is 60 characters. Note that maximum input length is not implicitly checked by the library for compatibility with
-the C++ binding on Node.js, but should be checked with `bcrypt.truncates(password)` where necessary.
+expand('file-{a,b,c}.jpg')
+// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
 
-## Usage
+expand('-v{,,}')
+// => ['-v', '-v', '-v']
 
-The package exports an ECMAScript module with an UMD fallback.
+expand('file{0..2}.jpg')
+// => ['file0.jpg', 'file1.jpg', 'file2.jpg']
 
-```
-$> npm install bcryptjs
-```
+expand('file-{a..c}.jpg')
+// => ['file-a.jpg', 'file-b.jpg', 'file-c.jpg']
 
-```ts
-import bcrypt from "bcryptjs";
-```
+expand('file{2..0}.jpg')
+// => ['file2.jpg', 'file1.jpg', 'file0.jpg']
 
-### Usage with a CDN
+expand('file{0..4..2}.jpg')
+// => ['file0.jpg', 'file2.jpg', 'file4.jpg']
 
-- From GitHub via [jsDelivr](https://www.jsdelivr.com):<br />
-  `https://cdn.jsdelivr.net/gh/dcodeIO/bcrypt.js@TAG/index.js` (ESM)
-- From npm via [jsDelivr](https://www.jsdelivr.com):<br />
-  `https://cdn.jsdelivr.net/npm/bcryptjs@VERSION/index.js` (ESM)<br />
-  `https://cdn.jsdelivr.net/npm/bcryptjs@VERSION/umd/index.js` (UMD)
-- From npm via [unpkg](https://unpkg.com):<br />
-  `https://unpkg.com/bcryptjs@VERSION/index.js` (ESM)<br />
-  `https://unpkg.com/bcryptjs@VERSION/umd/index.js` (UMD)
+expand('file-{a..e..2}.jpg')
+// => ['file-a.jpg', 'file-c.jpg', 'file-e.jpg']
 
-Replace `TAG` respectively `VERSION` with a [specific version](https://github.com/dcodeIO/bcrypt.js/releases) or omit it (not recommended in production) to use latest.
+expand('file{00..10..5}.jpg')
+// => ['file00.jpg', 'file05.jpg', 'file10.jpg']
 
-When using the ESM variant in a browser, the `crypto` import needs to be stubbed out, for example using an [import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap). Bundlers should omit it automatically.
+expand('{{A..C},{a..c}}')
+// => ['A', 'B', 'C', 'a', 'b', 'c']
 
-### Usage - Sync
-
-To hash a password:
-
-```ts
-const salt = bcrypt.genSaltSync(10);
-const hash = bcrypt.hashSync("B4c0/\/", salt);
-// Store hash in your password DB
-```
-
-To check a password:
-
-```ts
-// Load hash from your password DB
-bcrypt.compareSync("B4c0/\/", hash); // true
-bcrypt.compareSync("not_bacon", hash); // false
-```
-
-Auto-gen a salt and hash:
-
-```ts
-const hash = bcrypt.hashSync("bacon", 10);
-```
-
-### Usage - Async
-
-To hash a password:
-
-```ts
-const salt = await bcrypt.genSalt(10);
-const hash = await bcrypt.hash("B4c0/\/", salt);
-// Store hash in your password DB
-```
-
-```ts
-bcrypt.genSalt(10, (err, salt) => {
-  bcrypt.hash("B4c0/\/", salt, function (err, hash) {
-    // Store hash in your password DB
-  });
-});
-```
-
-To check a password:
-
-```ts
-// Load hash from your password DB
-await bcrypt.compare("B4c0/\/", hash); // true
-await bcrypt.compare("not_bacon", hash); // false
-```
-
-```ts
-// Load hash from your password DB
-bcrypt.compare("B4c0/\/", hash, (err, res) => {
-  // res === true
-});
-bcrypt.compare("not_bacon", hash, (err, res) => {
-  // res === false
-});
-```
-
-Auto-gen a salt and hash:
-
-```ts
-await bcrypt.hash("B4c0/\/", 10);
-// Store hash in your password DB
-```
-
-```ts
-bcrypt.hash("B4c0/\/", 10, (err, hash) => {
-  // Store hash in your password DB
-});
-```
-
-**Note:** Under the hood, asynchronous APIs split an operation into small chunks. After the completion of a chunk, the execution of the next chunk is placed on the back of the [JS event queue](https://developer.mozilla.org/en/docs/Web/JavaScript/EventLoop), efficiently yielding for other computation to execute.
-
-### Usage - Command Line
-
-```
-Usage: bcrypt <input> [rounds|salt]
+expand('ppp{,config,oe{,conf}}')
+// => ['ppp', 'pppconfig', 'pppoe', 'pppoeconf']
 ```
 
 ## API
 
-### Callback types
-
-- **Callback<`T`>**: `(err: Error | null, result?: T) => void`<br />
-  Called with an error on failure or a value of type `T` upon success.
-
-- **ProgressCallback**: `(percentage: number) => void`<br />
-  Called with the percentage of rounds completed (0.0 - 1.0), maximally once per `MAX_EXECUTION_TIME = 100` ms.
-
-- **RandomFallback**: `(length: number) => number[]`<br />
-  Called to obtain random bytes when both [Web Crypto API](http://www.w3.org/TR/WebCryptoAPI/) and Node.js
-  [crypto](http://nodejs.org/api/crypto.html) are not available.
-
-### Functions
-
-- bcrypt.**genSaltSync**(rounds?: `number`): `string`<br />
-  Synchronously generates a salt. Number of rounds defaults to 10 when omitted.
-
-- bcrypt.**genSalt**(rounds?: `number`): `Promise<string>`<br />
-  Asynchronously generates a salt. Number of rounds defaults to 10 when omitted.
-
-- bcrypt.**genSalt**([rounds: `number`, ]callback: `Callback<string>`): `void`<br />
-  Asynchronously generates a salt. Number of rounds defaults to 10 when omitted.
-
-- bcrypt.**truncates**(password: `string`): `boolean`<br />
-  Tests if a password will be truncated when hashed, that is its length is greater than 72 bytes when converted to UTF-8.
-
-- bcrypt.**hashSync**(password: `string`, salt?: `number | string`): `string`
-  Synchronously generates a hash for the given password. Number of rounds defaults to 10 when omitted.
-
-- bcrypt.**hash**(password: `string`, salt: `number | string`): `Promise<string>`<br />
-  Asynchronously generates a hash for the given password.
-
-- bcrypt.**hash**(password: `string`, salt: `number | string`, callback: `Callback<string>`, progressCallback?: `ProgressCallback`): `void`<br />
-  Asynchronously generates a hash for the given password.
-
-- bcrypt.**compareSync**(password: `string`, hash: `string`): `boolean`<br />
-  Synchronously tests a password against a hash.
-
-- bcrypt.**compare**(password: `string`, hash: `string`): `Promise<boolean>`<br />
-  Asynchronously compares a password against a hash.
-
-- bcrypt.**compare**(password: `string`, hash: `string`, callback: `Callback<boolean>`, progressCallback?: `ProgressCallback`)<br />
-  Asynchronously compares a password against a hash.
-
-- bcrypt.**getRounds**(hash: `string`): `number`<br />
-  Gets the number of rounds used to encrypt the specified hash.
-
-- bcrypt.**getSalt**(hash: `string`): `string`<br />
-  Gets the salt portion from a hash. Does not validate the hash.
-
-- bcrypt.**setRandomFallback**(random: `RandomFallback`): `void`<br />
-  Sets the pseudo random number generator to use as a fallback if neither [Web Crypto API](http://www.w3.org/TR/WebCryptoAPI/) nor Node.js [crypto](http://nodejs.org/api/crypto.html) are available. Please note: It is highly important that the PRNG used is cryptographically secure and that it is seeded properly!
-
-## Building
-
-Building the UMD fallback:
-
-```
-$> npm run build
+```js
+var expand = require('brace-expansion');
 ```
 
-Running the [tests](./tests):
+### var expanded = expand(str)
 
+Return an array of all possible and valid expansions of `str`. If none are
+found, `[str]` is returned.
+
+Valid expansions are:
+
+```js
+/^(.*,)+(.+)?$/
+// {a,b,...}
 ```
-$> npm test
+
+A comma separated list of options, like `{a,b}` or `{a,{b,c}}` or `{,a,}`.
+
+```js
+/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
+// {x..y[..incr]}
 ```
 
-## Credits
+A numeric sequence from `x` to `y` inclusive, with optional increment.
+If `x` or `y` start with a leading `0`, all the numbers will be padded
+to have equal length. Negative numbers and backwards iteration work too.
 
-Based on work started by Shane Girish at [bcrypt-nodejs](https://github.com/shaneGirish/bcrypt-nodejs), which is itself
-based on [javascript-bcrypt](http://code.google.com/p/javascript-bcrypt/) (New BSD-licensed).
+```js
+/^-?\d+\.\.-?\d+(\.\.-?\d+)?$/
+// {x..y[..incr]}
+```
+
+An alphabetic sequence from `x` to `y` inclusive, with optional increment.
+`x` and `y` must be exactly one character, and if given, `incr` must be a
+number.
+
+For compatibility reasons, the string `${` is not eligible for brace expansion.
+
+## Installation
+
+With [npm](https://npmjs.org) do:
+
+```bash
+npm install brace-expansion
+```
+
+## Contributors
+
+- [Julian Gruber](https://github.com/juliangruber)
+- [Isaac Z. Schlueter](https://github.com/isaacs)
+
+## Sponsors
+
+This module is proudly supported by my [Sponsors](https://github.com/juliangruber/sponsors)!
+
+Do you want to support modules like this to improve their quality, stability and weigh in on new features? Then please consider donating to my [Patreon](https://www.patreon.com/juliangruber). Not sure how much of my modules you're using? Try [feross/thanks](https://github.com/feross/thanks)!
+
+## License
+
+(MIT)
+
+Copyright (c) 2013 Julian Gruber &lt;julian@juliangruber.com&gt;
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
